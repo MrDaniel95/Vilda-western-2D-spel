@@ -13,11 +13,16 @@ public class GamePane extends Pane {
     private final double WORLD_WIDTH = 2500;
     private final double WORLD_HEIGHT = 600;
 
+    private final double PLAYER_WIDTH = 120;
+    private final double PLAYER_HEIGHT = 120;
+
     private Pane world;
     private ImageView background;
     private ImageView player;
 
-    private boolean up, down, left, right;
+    private boolean left, right;
+
+    private final double groundY = 430;
 
     public GamePane() {
         setPrefSize(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -32,10 +37,10 @@ public class GamePane extends Pane {
 
         Image playerImage = new Image(getClass().getResourceAsStream("/images/cowboy.png"));
         player = new ImageView(playerImage);
-        player.setFitWidth(120);
-        player.setFitHeight(120);
+        player.setFitWidth(PLAYER_WIDTH);
+        player.setFitHeight(PLAYER_HEIGHT);
         player.setTranslateX(100);
-        player.setTranslateY(500);
+        player.setTranslateY(groundY);
 
         world.getChildren().addAll(background, player);
         getChildren().add(world);
@@ -47,8 +52,6 @@ public class GamePane extends Pane {
     private void setupControls() {
         setOnKeyPressed(e -> {
             switch (e.getCode()) {
-                case W -> up = true;
-                case S -> down = true;
                 case A -> left = true;
                 case D -> right = true;
             }
@@ -56,8 +59,6 @@ public class GamePane extends Pane {
 
         setOnKeyReleased(e -> {
             switch (e.getCode()) {
-                case W -> up = false;
-                case S -> down = false;
                 case A -> left = false;
                 case D -> right = false;
             }
@@ -81,27 +82,30 @@ public class GamePane extends Pane {
     private void movePlayer() {
         double speed = 4;
 
-        if (up) player.setTranslateY(player.getTranslateY() - speed);
-        if (down) player.setTranslateY(player.getTranslateY() + speed);
-        if (left) player.setTranslateX(player.getTranslateX() - speed);
-        if (right) player.setTranslateX(player.getTranslateX() + speed);
+        if (left) {
+            player.setTranslateX(player.getTranslateX() - speed);
+        }
+        if (right) {
+            player.setTranslateX(player.getTranslateX() + speed);
+        }
 
         keepPlayerInsideWorld();
+
+        player.setTranslateY(groundY);
     }
 
     private void keepPlayerInsideWorld() {
-        if (player.getTranslateX() < 0) player.setTranslateX(0);
-        if (player.getTranslateY() < 0) player.setTranslateY(0);
-        if (player.getTranslateX() > WORLD_WIDTH - player.getFitWidth()) {
-            player.setTranslateX(WORLD_WIDTH - player.getFitWidth());
+        if (player.getTranslateX() < 0) {
+            player.setTranslateX(0);
         }
-        if (player.getTranslateY() > WORLD_HEIGHT - player.getFitHeight()) {
-            player.setTranslateY(WORLD_HEIGHT - player.getFitHeight());
+
+        if (player.getTranslateX() > WORLD_WIDTH - PLAYER_WIDTH) {
+            player.setTranslateX(WORLD_WIDTH - PLAYER_WIDTH);
         }
     }
 
     private void updateCamera() {
-        double cameraX = player.getTranslateX() - WINDOW_WIDTH / 2 + player.getFitWidth() / 2;
+        double cameraX = player.getTranslateX() - WINDOW_WIDTH / 2 + PLAYER_WIDTH / 2;
 
         if (cameraX < 0) {
             cameraX = 0;
