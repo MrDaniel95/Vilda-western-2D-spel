@@ -6,6 +6,12 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 
 public class GamePane extends Pane {
+    private Image cowboyIdle;
+    private Image cowboyWalk1;
+    private Image cowboyWalk2;
+
+    private int animationCounter = 0;
+    private boolean isMoving = false;
 
     private final double WINDOW_WIDTH = 800;
     private final double WINDOW_HEIGHT = 600;
@@ -35,8 +41,11 @@ public class GamePane extends Pane {
         background.setFitWidth(WORLD_WIDTH);
         background.setFitHeight(WORLD_HEIGHT);
 
-        Image playerImage = new Image(getClass().getResourceAsStream("/images/cowboy.png"));
-        player = new ImageView(playerImage);
+        cowboyIdle = new Image(getClass().getResourceAsStream("/images/cowboy_idle.png"));
+        cowboyWalk1 = new Image(getClass().getResourceAsStream("/images/cowboy_walk1.png"));
+        cowboyWalk2 = new Image(getClass().getResourceAsStream("/images/cowboy_walk2.png"));
+
+        player = new ImageView(cowboyIdle);
         player.setFitWidth(PLAYER_WIDTH);
         player.setFitHeight(PLAYER_HEIGHT);
         player.setTranslateX(100);
@@ -76,22 +85,48 @@ public class GamePane extends Pane {
 
     private void update() {
         movePlayer();
+        animatePlayer();
         updateCamera();
     }
 
     private void movePlayer() {
         double speed = 4;
+        isMoving = false;
 
         if (left) {
             player.setTranslateX(player.getTranslateX() - speed);
+            player.setScaleX(-1);
+            isMoving = true;
         }
         if (right) {
             player.setTranslateX(player.getTranslateX() + speed);
+            player.setScaleX(1);
+            isMoving = true;
         }
 
         keepPlayerInsideWorld();
-
         player.setTranslateY(groundY);
+    }
+
+    private void animatePlayer() {
+        if (isMoving) {
+            animationCounter++;
+
+            if (animationCounter < 15) {
+                player.setImage(cowboyWalk1);
+            } else if (animationCounter < 30) {
+                player.setImage(cowboyIdle);
+            } else if (animationCounter < 45) {
+                player.setImage(cowboyWalk2);
+            } else if (animationCounter < 60) {
+                player.setImage(cowboyIdle);
+            } else {
+                animationCounter = 0;
+            }
+        } else {
+            player.setImage(cowboyIdle);
+            animationCounter = 0;
+        }
     }
 
     private void keepPlayerInsideWorld() {
