@@ -1,58 +1,44 @@
 package org.example.litetspel.map;
 
 import javafx.animation.AnimationTimer;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
-import org.example.litetspel.bullets.Bullet;
-import org.example.litetspel.enemies.Enemy;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
 
 public class GamePane extends Pane {
 
-    private Rectangle player;
+    private final double WINDOW_WIDTH = 800;
+    private final double WINDOW_HEIGHT = 600;
+
+    private final double WORLD_WIDTH = 2500;
+    private final double WORLD_HEIGHT = 600;
+
+    private Pane world;
+    private ImageView background;
+    private ImageView player;
+
     private boolean up, down, left, right;
 
-    private List<Bullet> bullets = new ArrayList<>();
-    private List<Enemy> enemies = new ArrayList<>();
-
-    private Random random = new Random();
-
-    private int lives = 3;
-    private boolean gameOver = false;
-
-    private Text livesText;
-    private Text gameOverText;
-
-    private long lastEnemySpawnTime = 0;
-    private final long enemySpawnInterval = 2_000_000_000L; // 2 sekunder
-
     public GamePane() {
-        setPrefSize(800, 600);
-        setStyle("-fx-background-color: beige;");
+        setPrefSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-        player = new Rectangle(40, 40, Color.BROWN);
+        world = new Pane();
+        world.setPrefSize(WORLD_WIDTH, WORLD_HEIGHT);
+
+        Image bgImage = new Image(getClass().getResourceAsStream("/images/background.png"));
+        background = new ImageView(bgImage);
+        background.setFitWidth(WORLD_WIDTH);
+        background.setFitHeight(WORLD_HEIGHT);
+
+        Image playerImage = new Image(getClass().getResourceAsStream("/images/cowboy.png"));
+        player = new ImageView(playerImage);
+        player.setFitWidth(120);
+        player.setFitHeight(120);
         player.setTranslateX(100);
-        player.setTranslateY(100);
+        player.setTranslateY(500);
 
-        livesText = new Text("Lives: " + lives);
-        livesText.setFont(Font.font(24));
-        livesText.setTranslateX(20);
-        livesText.setTranslateY(30);
-
-        gameOverText = new Text("GAME OVER");
-        gameOverText.setFont(Font.font(50));
-        gameOverText.setTranslateX(250);
-        gameOverText.setTranslateY(300);
-        gameOverText.setVisible(false);
-
-        getChildren().addAll(player, livesText, gameOverText);
+        world.getChildren().addAll(background, player);
+        getChildren().add(world);
 
         setupControls();
         startGameLoop();
@@ -60,14 +46,11 @@ public class GamePane extends Pane {
 
     private void setupControls() {
         setOnKeyPressed(e -> {
-            if (gameOver) return;
-
             switch (e.getCode()) {
                 case W -> up = true;
                 case S -> down = true;
                 case A -> left = true;
                 case D -> right = true;
-                case SPACE -> shoot();
             }
         });
 
@@ -81,128 +64,53 @@ public class GamePane extends Pane {
         });
     }
 
-    private void shoot() {
-        double bulletX = player.getTranslateX() + 40;
-        double bulletY = player.getTranslateY() + 18;
-
-        Bullet bullet = new Bullet(bulletX, bulletY);
-        bullets.add(bullet);
-        getChildren().add(bullet);
-    }
-
-    private void spawnEnemy() {
-        double x = 700 + random.nextInt(80);
-        double y = random.nextInt(560);
-
-        Enemy enemy = new Enemy(x, y);
-        enemies.add(enemy);
-        getChildren().add(enemy);
-    }
-
     private void startGameLoop() {
         new AnimationTimer() {
             @Override
             public void handle(long now) {
-                if (!gameOver) {
-                    update(now);
-                }
+                update();
             }
         }.start();
     }
 
-    private void update(long now) {
+    private void update() {
         movePlayer();
-        updateBullets();
-        spawnEnemiesOverTime(now);
-        updateEnemies();
-        checkBulletEnemyCollision();
-        checkPlayerEnemyCollision();
+        updateCamera();
     }
 
     private void movePlayer() {
-        if (up) player.setTranslateY(player.getTranslateY() - 3);
-        if (down) player.setTranslateY(player.getTranslateY() + 3);
-        if (left) player.setTranslateX(player.getTranslateX() - 3);
-        if (right) player.setTranslateX(player.getTranslateX() + 3);
+        double speed = 4;
 
-        keepPlayerInsideScreen();
+        if (up) player.setTranslateY(player.getTranslateY() - speed);
+        if (down) player.setTranslateY(player.getTranslateY() + speed);
+        if (left) player.setTranslateX(player.getTranslateX() - speed);
+        if (right) player.setTranslateX(player.getTranslateX() + speed);
+
+        keepPlayerInsideWorld();
     }
 
-    private void keepPlayerInsideScreen() {
+    private void keepPlayerInsideWorld() {
         if (player.getTranslateX() < 0) player.setTranslateX(0);
         if (player.getTranslateY() < 0) player.setTranslateY(0);
-        if (player.getTranslateX() > getPrefWidth() - 40) player.setTranslateX(getPrefWidth() - 40);
-        if (player.getTranslateY() > getPrefHeight() - 40) player.setTranslateY(getPrefHeight() - 40);
-    }
-
-    private void updateBullets() {
-        Iterator<Bullet> iterator = bullets.iterator();
-
-        while (iterator.hasNext()) {
-            Bullet bullet = iterator.next();
-            bullet.move();
-
-            if (bullet.isOutOfScreen(getPrefWidth())) {
-                getChildren().remove(bullet);
-                iterator.remove();
-            }
+        if (player.getTranslateX() > WORLD_WIDTH - player.getFitWidth()) {
+            player.setTranslateX(WORLD_WIDTH - player.getFitWidth());
+        }
+        if (player.getTranslateY() > WORLD_HEIGHT - player.getFitHeight()) {
+            player.setTranslateY(WORLD_HEIGHT - player.getFitHeight());
         }
     }
 
-    private void spawnEnemiesOverTime(long now) {
-        if (now - lastEnemySpawnTime > enemySpawnInterval) {
-            spawnEnemy();
-            lastEnemySpawnTime = now;
+    private void updateCamera() {
+        double cameraX = player.getTranslateX() - WINDOW_WIDTH / 2 + player.getFitWidth() / 2;
+
+        if (cameraX < 0) {
+            cameraX = 0;
         }
-    }
 
-    private void updateEnemies() {
-        for (Enemy enemy : enemies) {
-            enemy.moveTowards(player.getTranslateX(), player.getTranslateY());
+        if (cameraX > WORLD_WIDTH - WINDOW_WIDTH) {
+            cameraX = WORLD_WIDTH - WINDOW_WIDTH;
         }
-    }
 
-    private void checkBulletEnemyCollision() {
-        Iterator<Bullet> bulletIterator = bullets.iterator();
-
-        while (bulletIterator.hasNext()) {
-            Bullet bullet = bulletIterator.next();
-
-            Iterator<Enemy> enemyIterator = enemies.iterator();
-
-            while (enemyIterator.hasNext()) {
-                Enemy enemy = enemyIterator.next();
-
-                if (bullet.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
-                    getChildren().remove(bullet);
-                    getChildren().remove(enemy);
-
-                    bulletIterator.remove();
-                    enemyIterator.remove();
-                    break;
-                }
-            }
-        }
-    }
-
-    private void checkPlayerEnemyCollision() {
-        Iterator<Enemy> iterator = enemies.iterator();
-
-        while (iterator.hasNext()) {
-            Enemy enemy = iterator.next();
-
-            if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
-                getChildren().remove(enemy);
-                iterator.remove();
-
-                lives--;
-                livesText.setText("Lives: " + lives);
-
-                if (lives <= 0) {
-                    gameOver = true;
-                    gameOverText.setVisible(true);
-                }
-            }
-        }
+        world.setLayoutX(-cameraX);
     }
 }
