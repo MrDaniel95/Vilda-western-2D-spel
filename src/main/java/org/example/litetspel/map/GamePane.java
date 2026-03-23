@@ -4,11 +4,22 @@ import javafx.animation.AnimationTimer;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
+import org.example.litetspel.bullets.Bullet;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class GamePane extends Pane {
     private Image cowboyIdle;
     private Image cowboyWalk1;
     private Image cowboyWalk2;
+
+    private List<Bullet> bullets = new ArrayList<>();
+    private int playerDirection = 1; // 1 = höger, -1 = vänster
+
+    private Image cowboyShoot;
+    private int shootTimer = 0;
 
     private int animationCounter = 0;
     private boolean isMoving = false;
@@ -44,6 +55,7 @@ public class GamePane extends Pane {
         cowboyIdle = new Image(getClass().getResourceAsStream("/images/cowboy_idle.png"));
         cowboyWalk1 = new Image(getClass().getResourceAsStream("/images/cowboy_walk1.png"));
         cowboyWalk2 = new Image(getClass().getResourceAsStream("/images/cowboy_walk2.png"));
+        cowboyShoot = new Image(getClass().getResourceAsStream("/images/cowboy_shoot.png"));
 
         player = new ImageView(cowboyIdle);
         player.setFitWidth(PLAYER_WIDTH);
@@ -63,6 +75,7 @@ public class GamePane extends Pane {
             switch (e.getCode()) {
                 case A -> left = true;
                 case D -> right = true;
+                case SPACE -> shoot();
             }
         });
 
@@ -87,6 +100,7 @@ public class GamePane extends Pane {
         movePlayer();
         animatePlayer();
         updateCamera();
+        updateBullets();
     }
 
     private void movePlayer() {
@@ -96,11 +110,13 @@ public class GamePane extends Pane {
         if (left) {
             player.setTranslateX(player.getTranslateX() - speed);
             player.setScaleX(-1);
+            playerDirection = -1;
             isMoving = true;
         }
         if (right) {
             player.setTranslateX(player.getTranslateX() + speed);
             player.setScaleX(1);
+            playerDirection = 1;
             isMoving = true;
         }
 
@@ -109,6 +125,12 @@ public class GamePane extends Pane {
     }
 
     private void animatePlayer() {
+        if (shootTimer > 0) {
+            player.setImage(cowboyShoot);
+            shootTimer--;
+            return;
+        }
+
         if (isMoving) {
             animationCounter++;
 
@@ -126,6 +148,32 @@ public class GamePane extends Pane {
         } else {
             player.setImage(cowboyIdle);
             animationCounter = 0;
+        }
+    }
+
+    private void shoot() {
+        double x = player.getTranslateX() + PLAYER_WIDTH / 2;
+        double y = player.getTranslateY() + PLAYER_HEIGHT / 2;
+
+        Bullet bullet = new Bullet(x, y, playerDirection);
+
+        bullets.add(bullet);
+        world.getChildren().add(bullet);
+
+        shootTimer = 35; // antal frames shoot animation visas
+    }
+
+    private void updateBullets() {
+        Iterator<Bullet> iterator = bullets.iterator();
+
+        while (iterator.hasNext()) {
+            Bullet bullet = iterator.next();
+            bullet.move();
+
+            if (bullet.isOutOfBounds(WORLD_WIDTH)) {
+                world.getChildren().remove(bullet);
+                iterator.remove();
+            }
         }
     }
 

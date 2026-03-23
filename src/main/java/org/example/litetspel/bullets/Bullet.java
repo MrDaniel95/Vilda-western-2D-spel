@@ -5,19 +5,22 @@ import javafx.scene.shape.Rectangle;
 
 public class Bullet extends Rectangle {
 
-    private double speed = 6;
+    private double speed = 8;
+    private int direction = 1; // 1 = höger, -1 = vänster
 
-    public Bullet(double x, double y) {
-        super(15, 5, Color.BLACK);
+    public Bullet(double x, double y, int direction) {
+        super(20, 6, Color.BLACK);
+        this.direction = direction;
+
         setTranslateX(x);
         setTranslateY(y);
     }
 
     public void move() {
-        setTranslateX(getTranslateX() + speed);
+        setTranslateX(getTranslateX() + speed * direction);
     }
 
-    public boolean isOutOfScreen(double screenWidth) {
-        return getTranslateX() > screenWidth;
+    public boolean isOutOfBounds(double worldWidth) {
+        return getTranslateX() < 0 || getTranslateX() > worldWidth;
     }
 }
