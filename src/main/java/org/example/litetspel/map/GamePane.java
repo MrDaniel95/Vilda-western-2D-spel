@@ -20,6 +20,12 @@ public class GamePane extends Pane {
 
     private Image cowboyShoot;
     private int shootTimer = 0;
+    private Image muzzleFlashImage;
+    private ImageView muzzleFlash;
+    private int flashTimer = 0;
+    private int shootCooldown = 0;
+    private final int SHOOT_COOLDOWN_MAX = 20;
+    private double recoilOffset = 0;
 
     private int animationCounter = 0;
     private boolean isMoving = false;
@@ -32,6 +38,9 @@ public class GamePane extends Pane {
 
     private final double PLAYER_WIDTH = 120;
     private final double PLAYER_HEIGHT = 120;
+
+    private final double SHOOT_WIDTH = 145;
+    private final double SHOOT_HEIGHT = 145;
 
     private Pane world;
     private ImageView background;
@@ -56,6 +65,12 @@ public class GamePane extends Pane {
         cowboyWalk1 = new Image(getClass().getResourceAsStream("/images/cowboy_walk1.png"));
         cowboyWalk2 = new Image(getClass().getResourceAsStream("/images/cowboy_walk2.png"));
         cowboyShoot = new Image(getClass().getResourceAsStream("/images/cowboy_shoot.png"));
+        muzzleFlashImage = new Image(getClass().getResourceAsStream("/images/muzzle_flash.png"));
+
+        muzzleFlash = new ImageView(muzzleFlashImage);
+        muzzleFlash.setFitWidth(70);
+        muzzleFlash.setFitHeight(50);
+        muzzleFlash.setVisible(false);
 
         player = new ImageView(cowboyIdle);
         player.setFitWidth(PLAYER_WIDTH);
@@ -63,7 +78,7 @@ public class GamePane extends Pane {
         player.setTranslateX(100);
         player.setTranslateY(groundY);
 
-        world.getChildren().addAll(background, player);
+        world.getChildren().addAll(background, player, muzzleFlash);
         getChildren().add(world);
 
         setupControls();
@@ -99,8 +114,11 @@ public class GamePane extends Pane {
     private void update() {
         movePlayer();
         animatePlayer();
-        updateCamera();
         updateBullets();
+        updateMuzzleFlash();
+        updateShootCooldown();
+        updateRecoil();
+        updateCamera();
     }
 
     private void movePlayer() {
@@ -113,11 +131,16 @@ public class GamePane extends Pane {
             playerDirection = -1;
             isMoving = true;
         }
+
         if (right) {
             player.setTranslateX(player.getTranslateX() + speed);
             player.setScaleX(1);
             playerDirection = 1;
             isMoving = true;
+        }
+
+        if (recoilOffset > 0) {
+            player.setTranslateX(player.getTranslateX() - playerDirection * 1.5);
         }
 
         keepPlayerInsideWorld();
@@ -134,13 +157,13 @@ public class GamePane extends Pane {
         if (isMoving) {
             animationCounter++;
 
-            if (animationCounter < 15) {
+            if (animationCounter < 18) {
                 player.setImage(cowboyWalk1);
-            } else if (animationCounter < 30) {
+            } else if (animationCounter < 36) {
                 player.setImage(cowboyIdle);
-            } else if (animationCounter < 45) {
+            } else if (animationCounter < 54) {
                 player.setImage(cowboyWalk2);
-            } else if (animationCounter < 60) {
+            } else if (animationCounter < 72) {
                 player.setImage(cowboyIdle);
             } else {
                 animationCounter = 0;
@@ -152,15 +175,42 @@ public class GamePane extends Pane {
     }
 
     private void shoot() {
-        double x = player.getTranslateX() + PLAYER_WIDTH / 2;
-        double y = player.getTranslateY() + PLAYER_HEIGHT / 2;
+        if (shootCooldown > 0) {
+            return;
+        }
 
-        Bullet bullet = new Bullet(x, y, playerDirection);
+        double bulletX;
+        double bulletY = player.getTranslateY() + 40;
 
+        if (playerDirection == 1) {
+            bulletX = player.getTranslateX() + 102;
+        } else {
+            bulletX = player.getTranslateX() + 18;
+        }
+
+        Bullet bullet = new Bullet(bulletX, bulletY, playerDirection);
         bullets.add(bullet);
         world.getChildren().add(bullet);
 
-        shootTimer = 35; // antal frames shoot animation visas
+        shootTimer = 20;
+        flashTimer = 6;
+        shootCooldown = SHOOT_COOLDOWN_MAX;
+        recoilOffset = 10;
+
+        double flashX;
+        double flashY = player.getTranslateY() + 22;
+
+        if (playerDirection == 1) {
+            flashX = player.getTranslateX() + 112;
+            muzzleFlash.setScaleX(1);
+        } else {
+            flashX = player.getTranslateX() - 8;
+            muzzleFlash.setScaleX(-1);
+        }
+
+        muzzleFlash.setTranslateX(flashX);
+        muzzleFlash.setTranslateY(flashY);
+        muzzleFlash.setVisible(true);
     }
 
     private void updateBullets() {
@@ -174,6 +224,29 @@ public class GamePane extends Pane {
                 world.getChildren().remove(bullet);
                 iterator.remove();
             }
+        }
+    }
+
+    private void updateShootCooldown() {
+        if (shootCooldown > 0) {
+            shootCooldown--;
+        }
+    }
+
+    private void updateRecoil() {
+        if (recoilOffset > 0) {
+            recoilOffset -= 1.5;
+            if (recoilOffset < 0) {
+                recoilOffset = 0;
+            }
+        }
+    }
+
+    private void updateMuzzleFlash() {
+        if (flashTimer > 0) {
+            flashTimer--;
+        } else {
+            muzzleFlash.setVisible(false);
         }
     }
 
