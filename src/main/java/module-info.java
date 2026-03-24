@@ -1,7 +1,8 @@
 module org.example.litetspel {
     requires javafx.controls;
     requires javafx.fxml;
-
+    requires java.desktop;
+    requires javafx.media;
 
     opens org.example.litetspel to javafx.fxml;
     exports org.example.litetspel;

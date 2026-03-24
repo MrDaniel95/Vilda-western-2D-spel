@@ -9,11 +9,14 @@ import org.example.litetspel.bullets.Bullet;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javafx.scene.media.AudioClip;
 
 public class GamePane extends Pane {
     private Image cowboyIdle;
     private Image cowboyWalk1;
     private Image cowboyWalk2;
+
+    private AudioClip gunshotSound;
 
     private List<Bullet> bullets = new ArrayList<>();
     private int playerDirection = 1; // 1 = höger, -1 = vänster
@@ -68,6 +71,9 @@ public class GamePane extends Pane {
         muzzleFlash.setFitWidth(70);
         muzzleFlash.setFitHeight(50);
         muzzleFlash.setVisible(false);
+
+        gunshotSound = new AudioClip(getClass().getResource("/sounds/gunshot.wav").toExternalForm());
+        gunshotSound.setVolume(0.3);
 
         player = new ImageView(cowboyIdle);
         player.setFitWidth(PLAYER_WIDTH);
@@ -176,6 +182,7 @@ public class GamePane extends Pane {
             return;
         }
 
+        gunshotSound.play();
         double bulletX;
         double bulletY = player.getTranslateY() + 40;
 

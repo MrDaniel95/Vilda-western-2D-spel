@@ -1,7 +1,5 @@
 package org.example.litetspel.bullets;
 
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
