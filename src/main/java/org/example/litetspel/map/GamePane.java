@@ -39,9 +39,6 @@ public class GamePane extends Pane {
     private final double PLAYER_WIDTH = 120;
     private final double PLAYER_HEIGHT = 120;
 
-    private final double SHOOT_WIDTH = 145;
-    private final double SHOOT_HEIGHT = 145;
-
     private Pane world;
     private ImageView background;
     private ImageView player;
