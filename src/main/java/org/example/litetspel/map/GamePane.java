@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import javafx.scene.media.AudioClip;
+import org.example.litetspel.enemies.Enemy;
 
 public class GamePane extends Pane {
     private Image cowboyIdle;
@@ -41,6 +42,11 @@ public class GamePane extends Pane {
 
     private final double PLAYER_WIDTH = 120;
     private final double PLAYER_HEIGHT = 120;
+
+    private List<Enemy> enemies = new ArrayList<>();
+
+    private long lastEnemySpawnTime = 0;
+    private final long enemySpawnInterval = 2_000_000_000L; // 2 sekunder
 
     private Pane world;
     private ImageView background;
@@ -118,6 +124,9 @@ public class GamePane extends Pane {
         movePlayer();
         animatePlayer();
         updateBullets();
+        spawnEnemies();
+        updateEnemies();
+        checkBulletEnemyCollisions();
         updateMuzzleFlash();
         updateShootCooldown();
         updateRecoil();
@@ -251,6 +260,54 @@ public class GamePane extends Pane {
             flashTimer--;
         } else {
             muzzleFlash.setVisible(false);
+        }
+    }
+
+    private void spawnEnemies() {
+        long now = System.nanoTime();
+
+        if (now - lastEnemySpawnTime > enemySpawnInterval) {
+            double enemyX = player.getTranslateX() + 700;
+
+            if (enemyX > WORLD_WIDTH - 120) {
+                enemyX = WORLD_WIDTH - 120;
+            }
+
+            Enemy enemy = new Enemy(enemyX, groundY);
+            enemies.add(enemy);
+            world.getChildren().add(enemy);
+
+            lastEnemySpawnTime = now;
+        }
+    }
+
+    private void updateEnemies() {
+        for (Enemy enemy : enemies) {
+            enemy.moveTowards(player.getTranslateX());
+        }
+    }
+
+    private void checkBulletEnemyCollisions() {
+        Iterator<Bullet> bulletIterator = bullets.iterator();
+
+        while (bulletIterator.hasNext()) {
+            Bullet bullet = bulletIterator.next();
+
+            Iterator<Enemy> enemyIterator = enemies.iterator();
+
+            while (enemyIterator.hasNext()) {
+                Enemy enemy = enemyIterator.next();
+
+                if (bullet.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
+                    world.getChildren().remove(bullet);
+                    world.getChildren().remove(enemy);
+
+                    bulletIterator.remove();
+                    enemyIterator.remove();
+
+                    break;
+                }
+            }
         }
     }
 
