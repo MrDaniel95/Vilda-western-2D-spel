@@ -3,7 +3,7 @@ package org.example.litetspel;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.example.litetspel.map.GamePane;
+import org.example.litetspel.engine.GamePane;
 
 public class Main extends Application {
 

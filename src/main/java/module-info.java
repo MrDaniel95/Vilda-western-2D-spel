@@ -6,8 +6,8 @@ module org.example.litetspel {
 
     opens org.example.litetspel to javafx.fxml;
     exports org.example.litetspel;
-    exports org.example.litetspel.map;
-    opens org.example.litetspel.map to javafx.fxml;
+    exports org.example.litetspel.engine;
+    opens org.example.litetspel.engine to javafx.fxml;
     exports org.example.litetspel.bullets;
     opens org.example.litetspel.bullets to javafx.fxml;
     exports org.example.litetspel.enemies;

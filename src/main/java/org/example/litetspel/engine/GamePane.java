@@ -1,4 +1,4 @@
-package org.example.litetspel.map;
+package org.example.litetspel.engine;
 
 import javafx.animation.AnimationTimer;
 import javafx.scene.image.Image;
@@ -284,6 +284,7 @@ public class GamePane extends Pane {
     private void updateEnemies() {
         for (Enemy enemy : enemies) {
             enemy.moveTowards(player.getTranslateX());
+            enemy.animate();
         }
     }
 
