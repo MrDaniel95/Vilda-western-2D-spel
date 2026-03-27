@@ -9,6 +9,13 @@ public class Enemy extends ImageView {
     private final Image enemyWalk1;
     private final Image enemyWalk2;
 
+    private Image enemyShoot;
+
+    private int shootTimer = 0;
+    private int shootCooldown = 0;
+
+    private final int SHOOT_COOLDOWN_MAX = 60;
+
     private int animationCounter = 0;
     private boolean isMoving = false;
 
@@ -18,6 +25,7 @@ public class Enemy extends ImageView {
         enemyIdle = new Image(getClass().getResourceAsStream("/images/enemy_idle.png"));
         enemyWalk1 = new Image(getClass().getResourceAsStream("/images/enemy_walk1.png"));
         enemyWalk2 = new Image(getClass().getResourceAsStream("/images/enemy_walk2.png"));
+        enemyShoot = new Image(getClass().getResourceAsStream("/images/enemy_shoot.png"));
 
         setImage(enemyIdle);
         setFitWidth(120);
@@ -30,7 +38,7 @@ public class Enemy extends ImageView {
     public void moveTowards(double targetX) {
         isMoving = false;
 
-        if (Math.abs(getTranslateX() - targetX) > 10) {
+        if (Math.abs(getTranslateX() - targetX) > 150) {
             if (getTranslateX() > targetX) {
                 setTranslateX(getTranslateX() - speed);
                 setScaleX(1);   // vänster
@@ -40,9 +48,17 @@ public class Enemy extends ImageView {
             }
             isMoving = true;
         }
+
     }
 
     public void animate() {
+
+        if (shootTimer > 0) {
+            setImage(enemyShoot);
+            shootTimer--;
+            return;
+        }
+
         if (isMoving) {
             animationCounter++;
 
@@ -61,5 +77,21 @@ public class Enemy extends ImageView {
             setImage(enemyIdle);
             animationCounter = 0;
         }
+    }
+
+    public boolean tryShoot() {
+        if (shootCooldown > 0) {
+            shootCooldown--;
+            return false;
+        }
+
+        shootTimer = 20;
+        shootCooldown = SHOOT_COOLDOWN_MAX;
+
+        return true; // signal att den ska skjuta
+    }
+
+    public int getDirection() {
+        return getScaleX() == 1 ? -1 : 1;
     }
 }

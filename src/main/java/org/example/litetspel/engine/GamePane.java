@@ -19,7 +19,8 @@ public class GamePane extends Pane {
 
     private AudioClip gunshotSound;
 
-    private List<Bullet> bullets = new ArrayList<>();
+    private List<Bullet> playerBullets = new ArrayList<>();
+    private List<Bullet> enemyBullets = new ArrayList<>();
     private int playerDirection = 1; // 1 = höger, -1 = vänster
 
     private Image cowboyShoot;
@@ -127,6 +128,7 @@ public class GamePane extends Pane {
         spawnEnemies();
         updateEnemies();
         checkBulletEnemyCollisions();
+        checkEnemyBulletPlayerCollisions();
         updateMuzzleFlash();
         updateShootCooldown();
         updateRecoil();
@@ -202,7 +204,7 @@ public class GamePane extends Pane {
         }
 
         Bullet bullet = new Bullet(bulletX, bulletY, playerDirection);
-        bullets.add(bullet);
+        playerBullets.add(bullet);
         world.getChildren().add(bullet);
 
         shootTimer = 20;
@@ -227,6 +229,11 @@ public class GamePane extends Pane {
     }
 
     private void updateBullets() {
+        updateBulletList(playerBullets);
+        updateBulletList(enemyBullets);
+    }
+
+    private void updateBulletList(List<Bullet> bullets) {
         Iterator<Bullet> iterator = bullets.iterator();
 
         while (iterator.hasNext()) {
@@ -281,15 +288,39 @@ public class GamePane extends Pane {
         }
     }
 
+    private void spawnEnemyBullet(Enemy enemy) {
+        int direction = enemy.getDirection();
+
+        double x;
+        double y = enemy.getTranslateY() + 40;
+
+        if (direction == 1) {
+            x = enemy.getTranslateX() + 102;
+        } else {
+            x = enemy.getTranslateX() + 18;
+        }
+
+        Bullet bullet = new Bullet(x, y, direction);
+        enemyBullets.add(bullet);
+        world.getChildren().add(bullet);
+        gunshotSound.play();
+    }
+
     private void updateEnemies() {
         for (Enemy enemy : enemies) {
             enemy.moveTowards(player.getTranslateX());
             enemy.animate();
+
+            if (Math.abs(enemy.getTranslateX() - player.getTranslateX()) < 220) {
+                if (enemy.tryShoot()) {
+                    spawnEnemyBullet(enemy);
+                }
+            }
         }
     }
 
     private void checkBulletEnemyCollisions() {
-        Iterator<Bullet> bulletIterator = bullets.iterator();
+        Iterator<Bullet> bulletIterator = playerBullets.iterator();
 
         while (bulletIterator.hasNext()) {
             Bullet bullet = bulletIterator.next();
@@ -308,6 +339,21 @@ public class GamePane extends Pane {
 
                     break;
                 }
+            }
+        }
+    }
+
+    private void checkEnemyBulletPlayerCollisions() {
+        Iterator<Bullet> bulletIterator = enemyBullets.iterator();
+
+        while (bulletIterator.hasNext()) {
+            Bullet bullet = bulletIterator.next();
+
+            if (bullet.getBoundsInParent().intersects(player.getBoundsInParent())) {
+                world.getChildren().remove(bullet);
+                bulletIterator.remove();
+
+                // Här kan vi lägga till liv/skada senare.
             }
         }
     }
