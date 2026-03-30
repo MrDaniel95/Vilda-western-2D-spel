@@ -19,7 +19,6 @@ public class Bullet extends ImageView {
         setTranslateX(x);
         setTranslateY(y);
 
-        // vänd bilden beroende på riktning
         setScaleX(direction);
     }
 

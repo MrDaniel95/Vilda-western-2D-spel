@@ -5,17 +5,31 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import org.example.litetspel.bullets.Bullet;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import javafx.scene.media.AudioClip;
 import org.example.litetspel.enemies.Enemy;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.shape.Rectangle;
 
 public class GamePane extends Pane {
     private Image cowboyIdle;
     private Image cowboyWalk1;
     private Image cowboyWalk2;
+
+    private int lives = 3;
+    private final int maxLives = 3;
+    private boolean gameOver = false;
+
+    private Text livesText;
+    private Text gameOverText;
+
+    private Text restartText;
+    private Rectangle healthBarBackground;
+    private Rectangle healthBarFill;
 
     private AudioClip gunshotSound;
 
@@ -82,6 +96,35 @@ public class GamePane extends Pane {
         gunshotSound = new AudioClip(getClass().getResource("/sounds/gunshot.wav").toExternalForm());
         gunshotSound.setVolume(0.3);
 
+        livesText = new Text("Lives: " + lives);
+        livesText.setFont(Font.font(24));
+        livesText.setFill(Color.WHITE);
+        livesText.setTranslateX(20);
+        livesText.setTranslateY(35);
+
+        gameOverText = new Text("GAME OVER");
+        gameOverText.setFont(Font.font(48));
+        gameOverText.setFill(Color.RED);
+        gameOverText.setTranslateX(260);
+        gameOverText.setTranslateY(220);
+        gameOverText.setVisible(false);
+
+        restartText = new Text("Press R to restart");
+        restartText.setFont(Font.font(24));
+        restartText.setFill(Color.WHITE);
+        restartText.setTranslateX(270);
+        restartText.setTranslateY(270);
+        restartText.setVisible(false);
+
+        healthBarBackground = new Rectangle(200, 20, Color.DARKRED);
+        healthBarBackground.setTranslateX(20);
+        healthBarBackground.setTranslateY(45);
+
+        healthBarFill = new Rectangle(200, 20, Color.LIMEGREEN);
+        healthBarFill.setTranslateX(20);
+        healthBarFill.setTranslateY(45);
+
+
         player = new ImageView(cowboyIdle);
         player.setFitWidth(PLAYER_WIDTH);
         player.setFitHeight(PLAYER_HEIGHT);
@@ -89,18 +132,28 @@ public class GamePane extends Pane {
         player.setTranslateY(groundY);
 
         world.getChildren().addAll(background, player, muzzleFlash);
-        getChildren().add(world);
+        getChildren().addAll(world, livesText, healthBarBackground, healthBarFill, gameOverText, restartText);
 
         setupControls();
         startGameLoop();
+        updateHealthBar();
     }
 
     private void setupControls() {
         setOnKeyPressed(e -> {
             switch (e.getCode()) {
-                case A -> left = true;
-                case D -> right = true;
-                case SPACE -> shoot();
+                case A -> {
+                    if (!gameOver) left = true;
+                }
+                case D -> {
+                    if (!gameOver) right = true;
+                }
+                case SPACE -> {
+                    if (!gameOver) shoot();
+                }
+                case R -> {
+                    if (gameOver) restartGame();
+                }
             }
         });
 
@@ -122,6 +175,11 @@ public class GamePane extends Pane {
     }
 
     private void update() {
+        if (gameOver) {
+            updateCamera();
+            return;
+        }
+
         movePlayer();
         animatePlayer();
         updateBullets();
@@ -353,9 +411,69 @@ public class GamePane extends Pane {
                 world.getChildren().remove(bullet);
                 bulletIterator.remove();
 
-                // Här kan vi lägga till liv/skada senare.
+                lives--;
+                livesText.setText("Lives: " + lives);
+                updateHealthBar();
+
+                if (lives <= 0) {
+                    gameOver = true;
+                    left = false;
+                    right = false;
+                    gameOverText.setVisible(true);
+                    restartText.setVisible(true);
+                }
             }
         }
+    }
+
+    private void updateHealthBar() {
+        double healthPercentage = (double) lives / maxLives;
+        healthBarFill.setWidth(200 * healthPercentage);
+    }
+
+    private void restartGame() {
+        for (Bullet bullet : playerBullets) {
+            world.getChildren().remove(bullet);
+        }
+        playerBullets.clear();
+
+        for (Bullet bullet : enemyBullets) {
+            world.getChildren().remove(bullet);
+        }
+        enemyBullets.clear();
+
+        for (Enemy enemy : enemies) {
+            world.getChildren().remove(enemy);
+        }
+        enemies.clear();
+
+        player.setTranslateX(100);
+        player.setTranslateY(groundY);
+        player.setScaleX(1);
+        player.setImage(cowboyIdle);
+
+        playerDirection = 1;
+        left = false;
+        right = false;
+        isMoving = false;
+
+        lives = maxLives;
+        gameOver = false;
+
+        livesText.setText("Lives: " + lives);
+        updateHealthBar();
+
+        gameOverText.setVisible(false);
+        restartText.setVisible(false);
+        muzzleFlash.setVisible(false);
+
+        shootTimer = 0;
+        flashTimer = 0;
+        shootCooldown = 0;
+        recoilOffset = 0;
+        animationCounter = 0;
+
+        lastEnemySpawnTime = 0;
     }
 
     private void keepPlayerInsideWorld() {
