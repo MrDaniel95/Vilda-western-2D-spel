@@ -31,6 +31,9 @@ public class GamePane extends Pane {
     private Rectangle healthBarBackground;
     private Rectangle healthBarFill;
 
+    private int score = 0;
+    private Text scoreText;
+
     private AudioClip gunshotSound;
 
     private List<Bullet> playerBullets = new ArrayList<>();
@@ -102,6 +105,12 @@ public class GamePane extends Pane {
         livesText.setTranslateX(20);
         livesText.setTranslateY(35);
 
+        scoreText = new Text("Score: " + score);
+        scoreText.setFont(Font.font(24));
+        scoreText.setFill(Color.WHITE);
+        scoreText.setTranslateX(650);
+        scoreText.setTranslateY(35);
+
         gameOverText = new Text("GAME OVER");
         gameOverText.setFont(Font.font(48));
         gameOverText.setFill(Color.RED);
@@ -132,8 +141,7 @@ public class GamePane extends Pane {
         player.setTranslateY(groundY);
 
         world.getChildren().addAll(background, player, muzzleFlash);
-        getChildren().addAll(world, livesText, healthBarBackground, healthBarFill, gameOverText, restartText);
-
+        getChildren().addAll(world, livesText, scoreText, healthBarBackground, healthBarFill, gameOverText, restartText);
         setupControls();
         startGameLoop();
         updateHealthBar();
@@ -395,6 +403,9 @@ public class GamePane extends Pane {
                     bulletIterator.remove();
                     enemyIterator.remove();
 
+                    score++;
+                    scoreText.setText("Score: " + score);
+
                     break;
                 }
             }
@@ -459,8 +470,10 @@ public class GamePane extends Pane {
 
         lives = maxLives;
         gameOver = false;
+        score = 0;
 
         livesText.setText("Lives: " + lives);
+        scoreText.setText("Score: " + score);
         updateHealthBar();
 
         gameOverText.setVisible(false);
